@@ -1,0 +1,333 @@
+{
+  "$defs": {
+    "AddressingEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "title": "Device",
+          "type": "string"
+        },
+        "interface": {
+          "description": "Logical interface id",
+          "title": "Interface",
+          "type": "string"
+        },
+        "ip": {
+          "title": "Ip",
+          "type": "string"
+        },
+        "mask": {
+          "title": "Mask",
+          "type": "string"
+        },
+        "gateway": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default gateway (hosts only)",
+          "title": "Gateway"
+        }
+      },
+      "required": [
+        "device",
+        "interface",
+        "ip",
+        "mask"
+      ],
+      "title": "AddressingEntry",
+      "type": "object"
+    },
+    "Ambiguity": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "description": "JSON path or topic the issue concerns",
+          "title": "Field",
+          "type": "string"
+        },
+        "issue": {
+          "title": "Issue",
+          "type": "string"
+        },
+        "suggestion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Suggestion"
+        },
+        "resolved": {
+          "default": false,
+          "title": "Resolved",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "field",
+        "issue"
+      ],
+      "title": "Ambiguity",
+      "type": "object"
+    },
+    "Device": {
+      "additionalProperties": false,
+      "properties": {
+        "hostname": {
+          "title": "Hostname",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/Role"
+        },
+        "aliases": {
+          "description": "Other labels seen in the diagram, e.g. 'router1'",
+          "items": {
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "router_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "OSPF router-id (routers only)",
+          "title": "Router Id"
+        },
+        "interfaces": {
+          "items": {
+            "$ref": "#/$defs/Interface"
+          },
+          "title": "Interfaces",
+          "type": "array"
+        }
+      },
+      "required": [
+        "hostname",
+        "role",
+        "interfaces"
+      ],
+      "title": "Device",
+      "type": "object"
+    },
+    "Endpoint": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "title": "Device",
+          "type": "string"
+        },
+        "interface": {
+          "description": "Logical interface id on that device",
+          "title": "Interface",
+          "type": "string"
+        }
+      },
+      "required": [
+        "device",
+        "interface"
+      ],
+      "title": "Endpoint",
+      "type": "object"
+    },
+    "Interface": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "Logical id unique per device, e.g. 'R1-L1' (diagrams rarely show port names)",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Physical IOS interface name, e.g. GigabitEthernet0/1. Null until mapped from router discovery.",
+          "title": "Name"
+        },
+        "ip": {
+          "description": "IPv4 address, dotted decimal",
+          "title": "Ip",
+          "type": "string"
+        },
+        "mask": {
+          "description": "Subnet mask, dotted decimal, e.g. 255.255.255.0",
+          "title": "Mask",
+          "type": "string"
+        },
+        "link": {
+          "description": "Id of the link this interface attaches to",
+          "title": "Link",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "ip",
+        "mask",
+        "link"
+      ],
+      "title": "Interface",
+      "type": "object"
+    },
+    "Link": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "subnet": {
+          "description": "CIDR, e.g. 10.1.0.0/24",
+          "title": "Subnet",
+          "type": "string"
+        },
+        "kind": {
+          "description": "lan = router-to-host segment, transit = router-to-router",
+          "enum": [
+            "lan",
+            "transit"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "endpoints": {
+          "items": {
+            "$ref": "#/$defs/Endpoint"
+          },
+          "title": "Endpoints",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "subnet",
+        "kind",
+        "endpoints"
+      ],
+      "title": "Link",
+      "type": "object"
+    },
+    "Role": {
+      "enum": [
+        "router",
+        "host"
+      ],
+      "title": "Role",
+      "type": "string"
+    },
+    "Routing": {
+      "additionalProperties": false,
+      "properties": {
+        "protocol": {
+          "const": "ospf",
+          "default": "ospf",
+          "title": "Protocol",
+          "type": "string"
+        },
+        "process_id": {
+          "default": 1,
+          "maximum": 65535,
+          "minimum": 1,
+          "title": "Process Id",
+          "type": "integer"
+        },
+        "area": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Area",
+          "type": "integer"
+        },
+        "passive_lan_interfaces": {
+          "default": true,
+          "title": "Passive Lan Interfaces",
+          "type": "boolean"
+        }
+      },
+      "title": "Routing",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Topology + addressing plan extracted from the diagram (or entered/overridden by the admin).",
+  "properties": {
+    "devices": {
+      "items": {
+        "$ref": "#/$defs/Device"
+      },
+      "title": "Devices",
+      "type": "array"
+    },
+    "links": {
+      "items": {
+        "$ref": "#/$defs/Link"
+      },
+      "title": "Links",
+      "type": "array"
+    },
+    "addressing_plan": {
+      "items": {
+        "$ref": "#/$defs/AddressingEntry"
+      },
+      "title": "Addressing Plan",
+      "type": "array"
+    },
+    "routing": {
+      "$ref": "#/$defs/Routing"
+    },
+    "ambiguities": {
+      "items": {
+        "$ref": "#/$defs/Ambiguity"
+      },
+      "title": "Ambiguities",
+      "type": "array"
+    },
+    "confidence": {
+      "default": 1.0,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "source": {
+      "default": "manual",
+      "enum": [
+        "ai",
+        "manual",
+        "sample"
+      ],
+      "title": "Source",
+      "type": "string"
+    }
+  },
+  "required": [
+    "devices",
+    "links",
+    "addressing_plan"
+  ],
+  "title": "Extraction",
+  "type": "object"
+}

@@ -1,0 +1,10 @@
+# ===== {{ hostname }} - GNS3 VPCS (display only; not deployed by the worker) =====
+ip {{ ip }}/{{ prefixlen }} {{ gateway }}
+save
+# Equivalent if {{ hostname }} is an IOS router acting as a host:
+#   hostname {{ hostname }}
+#   no ip routing
+#   interface <port>
+#    ip address {{ ip }} {{ mask }}
+#    no shutdown
+#   ip default-gateway {{ gateway }}

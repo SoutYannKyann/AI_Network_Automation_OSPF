@@ -1,0 +1,16 @@
+# Exact pins = the versions this project was tested with (Python 3.12).
+# Upgrade deliberately: bump, run `pytest`, then commit the new pins.
+fastapi==0.163.2
+uvicorn[standard]==0.54.0
+python-multipart==0.0.34
+pydantic==2.14.3
+Jinja2==3.1.6
+PyYAML==6.0.3
+httpx==0.28.1
+# paramiko 4+/5+ removed SHA-1 KEX and ssh-rsa host keys, which are the only ones Cisco c7200
+# (IOS 15.x, Dynamips in GNS3) offers. 3.5.1 still supports them; keep this pin for GNS3 labs.
+paramiko==3.5.1
+confluent-kafka==2.16.1
+anthropic==2.10.0
+# test only
+pytest==9.2.0

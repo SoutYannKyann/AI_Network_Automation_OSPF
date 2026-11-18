@@ -1,0 +1,20 @@
+# Copy to inventory.yaml and adjust. NO SECRETS HERE - credentials are referenced by
+# environment-variable name and only the worker process reads them.
+defaults:
+  port: 22
+  username_env: SSH_USERNAME
+  password_env: SSH_PASSWORD
+  enable_secret_env: SSH_ENABLE_SECRET
+devices:
+  R1:
+    mgmt_ip: 192.168.122.11        # out-of-band management address provided by the instructor
+    aliases: [router1]
+    # If SSH reaches the router through NAT / port-forward / console server, no interface holds
+    # mgmt_ip - then name the interface to protect explicitly (deploys are refused otherwise):
+    # mgmt_interface: GigabitEthernet0/0
+    # per-device overrides are allowed, e.g. password_env: R1_SSH_PASSWORD
+    sim_interfaces: [GigabitEthernet0/0, GigabitEthernet0/1, GigabitEthernet0/2]   # SIMULATE_DEVICES only
+  R2:
+    mgmt_ip: 192.168.122.12
+    aliases: [router2]
+    sim_interfaces: [GigabitEthernet0/0, GigabitEthernet0/1, GigabitEthernet0/2]

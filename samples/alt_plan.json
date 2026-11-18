@@ -1,0 +1,36 @@
+{
+  "devices": [
+    {"hostname": "HQ-PC", "role": "host", "aliases": [], "router_id": null,
+     "interfaces": [{"id": "a", "name": null, "ip": "192.168.10.50", "mask": "255.255.255.128", "link": "LAN-A"}]},
+    {"hostname": "RTR-A", "role": "router", "aliases": [], "router_id": "10.255.0.1",
+     "interfaces": [
+       {"id": "lan", "name": null, "ip": "192.168.10.1", "mask": "255.255.255.128", "link": "LAN-A"},
+       {"id": "wan", "name": null, "ip": "172.16.0.1", "mask": "255.255.255.252", "link": "WAN"}]},
+    {"hostname": "RTR-B", "role": "router", "aliases": [], "router_id": "10.255.0.2",
+     "interfaces": [
+       {"id": "wan", "name": null, "ip": "172.16.0.2", "mask": "255.255.255.252", "link": "WAN"},
+       {"id": "lan", "name": null, "ip": "192.168.20.1", "mask": "255.255.255.0", "link": "LAN-B"}]},
+    {"hostname": "BR-PC", "role": "host", "aliases": [], "router_id": null,
+     "interfaces": [{"id": "a", "name": null, "ip": "192.168.20.20", "mask": "255.255.255.0", "link": "LAN-B"}]}
+  ],
+  "links": [
+    {"id": "LAN-A", "subnet": "192.168.10.0/25", "kind": "lan",
+     "endpoints": [{"device": "HQ-PC", "interface": "a"}, {"device": "RTR-A", "interface": "lan"}]},
+    {"id": "WAN", "subnet": "172.16.0.0/30", "kind": "transit",
+     "endpoints": [{"device": "RTR-A", "interface": "wan"}, {"device": "RTR-B", "interface": "wan"}]},
+    {"id": "LAN-B", "subnet": "192.168.20.0/24", "kind": "lan",
+     "endpoints": [{"device": "RTR-B", "interface": "lan"}, {"device": "BR-PC", "interface": "a"}]}
+  ],
+  "addressing_plan": [
+    {"device": "HQ-PC", "interface": "a", "ip": "192.168.10.50", "mask": "255.255.255.128", "gateway": "192.168.10.1"},
+    {"device": "RTR-A", "interface": "lan", "ip": "192.168.10.1", "mask": "255.255.255.128", "gateway": null},
+    {"device": "RTR-A", "interface": "wan", "ip": "172.16.0.1", "mask": "255.255.255.252", "gateway": null},
+    {"device": "RTR-B", "interface": "wan", "ip": "172.16.0.2", "mask": "255.255.255.252", "gateway": null},
+    {"device": "RTR-B", "interface": "lan", "ip": "192.168.20.1", "mask": "255.255.255.0", "gateway": null},
+    {"device": "BR-PC", "interface": "a", "ip": "192.168.20.20", "mask": "255.255.255.0", "gateway": "192.168.20.1"}
+  ],
+  "routing": {"protocol": "ospf", "process_id": 1, "area": 0, "passive_lan_interfaces": true},
+  "ambiguities": [],
+  "confidence": 0.95,
+  "source": "sample"
+}

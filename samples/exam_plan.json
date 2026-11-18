@@ -1,0 +1,40 @@
+{
+  "devices": [
+    {"hostname": "PC1", "role": "host", "aliases": [], "router_id": null,
+     "interfaces": [{"id": "PC1-L1", "name": null, "ip": "10.0.0.10", "mask": "255.255.255.0", "link": "L1"}]},
+    {"hostname": "R1", "role": "router", "aliases": ["router1"], "router_id": "1.1.1.1",
+     "interfaces": [
+       {"id": "R1-L1", "name": null, "ip": "10.0.0.1", "mask": "255.255.255.0", "link": "L1"},
+       {"id": "R1-L2", "name": null, "ip": "10.1.0.1", "mask": "255.255.255.0", "link": "L2"}]},
+    {"hostname": "R2", "role": "router", "aliases": ["router2"], "router_id": "2.2.2.2",
+     "interfaces": [
+       {"id": "R2-L2", "name": null, "ip": "10.1.0.2", "mask": "255.255.255.0", "link": "L2"},
+       {"id": "R2-L3", "name": null, "ip": "10.2.0.2", "mask": "255.255.255.0", "link": "L3"}]},
+    {"hostname": "PC2", "role": "host", "aliases": [], "router_id": null,
+     "interfaces": [{"id": "PC2-L3", "name": null, "ip": "10.2.0.10", "mask": "255.255.255.0", "link": "L3"}]}
+  ],
+  "links": [
+    {"id": "L1", "subnet": "10.0.0.0/24", "kind": "lan",
+     "endpoints": [{"device": "PC1", "interface": "PC1-L1"}, {"device": "R1", "interface": "R1-L1"}]},
+    {"id": "L2", "subnet": "10.1.0.0/24", "kind": "transit",
+     "endpoints": [{"device": "R1", "interface": "R1-L2"}, {"device": "R2", "interface": "R2-L2"}]},
+    {"id": "L3", "subnet": "10.2.0.0/24", "kind": "lan",
+     "endpoints": [{"device": "R2", "interface": "R2-L3"}, {"device": "PC2", "interface": "PC2-L3"}]}
+  ],
+  "addressing_plan": [
+    {"device": "PC1", "interface": "PC1-L1", "ip": "10.0.0.10", "mask": "255.255.255.0", "gateway": "10.0.0.1"},
+    {"device": "R1", "interface": "R1-L1", "ip": "10.0.0.1", "mask": "255.255.255.0", "gateway": null},
+    {"device": "R1", "interface": "R1-L2", "ip": "10.1.0.1", "mask": "255.255.255.0", "gateway": null},
+    {"device": "R2", "interface": "R2-L2", "ip": "10.1.0.2", "mask": "255.255.255.0", "gateway": null},
+    {"device": "R2", "interface": "R2-L3", "ip": "10.2.0.2", "mask": "255.255.255.0", "gateway": null},
+    {"device": "PC2", "interface": "PC2-L3", "ip": "10.2.0.10", "mask": "255.255.255.0", "gateway": "10.2.0.2"}
+  ],
+  "routing": {"protocol": "ospf", "process_id": 1, "area": 0, "passive_lan_interfaces": true},
+  "ambiguities": [
+    {"field": "devices[*].interfaces[*].name", "issue": "Diagram shows no physical port names", "suggestion": "Map from router discovery (show ip interface brief)", "resolved": false},
+    {"field": "devices.R1.hostname", "issue": "Router labelled both 'R1' and 'router1'", "suggestion": "Use R1 (matches inventory)", "resolved": false},
+    {"field": "devices[*].router_id", "issue": "Router IDs not shown in the diagram", "suggestion": "Taken from exam requirement: R1 1.1.1.1, R2 2.2.2.2", "resolved": false}
+  ],
+  "confidence": 0.9,
+  "source": "sample"
+}

@@ -1,0 +1,159 @@
+/* Black & white theme. Light/dark via <html data-theme="light|dark"> (toggle in the header).
+   Status colours are kept but desaturated so they read clearly without being flashy. */
+:root, :root[data-theme="light"] {
+  --bg: #f4f4f4; --card: #ffffff; --soft: #f0f0f0; --ink: #111111; --ink-2: #333333; --muted: #6e6e6e;
+  --line: #e1e1e1; --line-strong: #c9c9c9;
+  --primary: #111111; --primary-ink: #ffffff; --primary-hover: #333333;
+  --ok: #2e7650; --err: #b0322a; --warn: #8a6a12; --run: #3d5a8a;
+  --code: #151515; --code-ink: #e8e8e8; --shadow: 0 1px 2px rgba(0,0,0,.05), 0 6px 20px rgba(0,0,0,.05);
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #0d0d0e; --card: #161618; --soft: #1e1e21; --ink: #f2f2f2; --ink-2: #d0d0d0; --muted: #9a9a9e;
+  --line: #2a2a2e; --line-strong: #3a3a3f;
+  --primary: #f2f2f2; --primary-ink: #111111; --primary-hover: #d6d6d6;
+  --ok: #57b383; --err: #e0675e; --warn: #d2ae4b; --run: #8fa9d6;
+  --code: #0a0a0b; --code-ink: #e4e4e4; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.5 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink);
+       -webkit-font-smoothing: antialiased; transition: background .2s, color .2s; }
+.mono, pre, code { font-family: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 12.5px; }
+
+/* ---------------------------------------------------------------- layout */
+header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+         padding: 12px 24px; background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+h1 { font-size: 17px; font-weight: 700; letter-spacing: -.01em; margin: 0; }
+h1 .sub { font-weight: 500; color: var(--muted); font-size: 12.5px; margin-left: 10px; letter-spacing: .02em; }
+h2 { font-size: 15.5px; font-weight: 700; letter-spacing: -.01em; margin: 0 0 12px; }
+h3 { font-size: 11.5px; font-weight: 600; margin: 14px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
+.hdr-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.school { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; flex: none; }
+.school img { height: 46px; width: auto; display: block; filter: drop-shadow(0 1px 1px rgba(0,0,0,.18)); }
+.school-name { display: flex; flex-direction: column; line-height: 1.05; }
+.school-name b { font-size: 15px; font-weight: 700; letter-spacing: .02em; }
+.school-name span { font-size: 11.5px; font-weight: 500; letter-spacing: .42em; color: var(--muted); margin-top: 3px; }
+.brand-sep { width: 1px; height: 34px; background: var(--line-strong); flex: none; }
+.watermark { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border: 1px solid var(--line-strong); border-radius: 999px;
+             font-size: 12.5px; font-weight: 600; letter-spacing: .02em; color: var(--ink-2); background: var(--soft); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.ok { background: var(--ok); } .dot.bad { background: var(--err); } .dot.warn { background: var(--warn); }
+main { padding: 20px 24px 48px; display: grid; gap: 18px; max-width: 1400px; margin: 0 auto; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; min-width: 0; box-shadow: var(--shadow); }
+.row { display: flex; gap: 18px; flex-wrap: wrap; } .col { flex: 1 1 380px; min-width: 0; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+.muted { color: var(--muted); }
+
+/* ---------------------------------------------------------------- buttons */
+button { font: inherit; font-weight: 500; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--card);
+         color: var(--ink); cursor: pointer; transition: background .15s, border-color .15s, color .15s, box-shadow .15s; }
+button:hover { border-color: var(--ink); }
+button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+button.primary { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); font-weight: 600; }
+button.primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+button.approve { background: var(--ok); color: #fff; border-color: var(--ok); font-weight: 600; }
+button.approve:hover { filter: brightness(1.08); }
+button.danger { background: var(--err); color: #fff; border-color: var(--err); font-weight: 600; }
+button.outline-danger { color: var(--err); border-color: color-mix(in srgb, var(--err) 55%, transparent); background: transparent; }
+button.outline-danger:hover { background: color-mix(in srgb, var(--err) 10%, transparent); border-color: var(--err); }
+button.ghost { border-color: transparent; background: transparent; color: var(--ink-2); }
+button.ghost:hover { background: var(--soft); border-color: var(--line); }
+button:disabled { opacity: .55; cursor: progress; }
+button.loading { position: relative; padding-left: 34px; cursor: progress; opacity: 1; }
+button.loading::before { content: ""; position: absolute; left: 12px; top: 50%; width: 14px; height: 14px; margin-top: -7px;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------------------------------------------------------------- inputs */
+input, textarea, select { font: inherit; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--card); color: var(--ink); }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 12%, transparent); }
+input[type="file"] { padding: 6px; background: var(--soft); }
+input[type="checkbox"] { accent-color: var(--ink); width: 15px; height: 15px; }
+input.missing { border-color: var(--err); }
+textarea { width: 100%; }
+.block { display: block; margin: 12px 0; font-weight: 500; } .block textarea, .block input { margin-top: 6px; display: block; }
+.inline { display: inline-flex; gap: 6px; align-items: center; }
+
+/* ---------------------------------------------------------------- step 1: generate + status text */
+.gen-bar { margin-top: 4px; }
+.status { font-weight: 600; font-size: 13px; padding: 7px 12px; border-radius: 8px; flex: 1 1 260px; border: 1px solid transparent; }
+.status.run { color: var(--run); background: color-mix(in srgb, var(--run) 9%, transparent); border-color: color-mix(in srgb, var(--run) 25%, transparent); }
+.status.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 9%, transparent); border-color: color-mix(in srgb, var(--ok) 25%, transparent); }
+.status.fail { color: var(--err); background: color-mix(in srgb, var(--err) 8%, transparent); border-color: color-mix(in srgb, var(--err) 25%, transparent); }
+.status.run::before { content: "● "; animation: pulse 1s infinite alternate; }
+@keyframes pulse { from { opacity: .3; } to { opacity: 1; } }
+.preview { display: flex; align-items: center; justify-content: center; min-height: 170px; border: 1px dashed var(--line-strong); border-radius: 10px; background: #fff; }
+.preview img { max-width: 100%; max-height: 320px; }
+.preview .muted { color: #777; }
+
+/* ---------------------------------------------------------------- lists, tables, configs */
+.issues { list-style: none; padding: 0; margin: 0; display: grid; gap: 5px; }
+.issues li { padding: 7px 10px; border-radius: 8px; border-left: 3px solid var(--line-strong); background: var(--soft); overflow-wrap: anywhere; }
+.issues li.error { border-color: var(--err); } .issues li.warning { border-color: var(--warn); } .issues li.info { border-color: var(--ok); }
+.issues li button { float: right; padding: 2px 9px; font-size: 12px; margin-left: 8px; }
+.issues .sug { display: block; }
+details.more { display: inline; } details.more summary { display: inline; cursor: pointer; list-style: none; }
+details.more summary::-webkit-details-marker { display: none; } details.more[open] summary { display: none; }
+table { width: 100%; border-collapse: collapse; } th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11.5px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+tbody tr:hover td { background: color-mix(in srgb, var(--soft) 60%, transparent); }
+td select { width: 100%; }
+#planTable tr.rid td { background: var(--soft); }
+.rids { display: flex; gap: 16px; flex-wrap: wrap; margin: 4px 0 12px; }
+.rids label { display: inline-flex; gap: 6px; align-items: center; font-weight: 600; }
+.rids input { width: 130px; font-weight: 400; }
+.configs { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-top: 14px; }
+.cfg { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.cfg h4 { margin: 0; padding: 9px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--soft); font-size: 13px; }
+pre { margin: 0; padding: 12px; background: var(--code); color: var(--code-ink); overflow: auto; max-height: 420px; white-space: pre; border-radius: 0; }
+.approve-bar { margin-top: 16px; padding: 14px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--soft); }
+details.card > summary { cursor: pointer; font-weight: 600; font-size: 14.5px; }
+details.card[open] > summary { margin-bottom: 8px; }
+#jobDetail { margin-top: 10px; }
+#jobDetail details > summary { cursor: pointer; font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin: 14px 0 6px; }
+
+.small { font-size: 12.5px; }
+.empty { padding: 10px 12px; border-radius: 8px; border: 1px dashed var(--line-strong); color: var(--muted); background: transparent; }
+.issues li.empty { border-left: 1px dashed var(--line-strong); }
+
+/* ---------------------------------------------------------------- jobs + verification evidence */
+#jobs tr.job-row.is-open td { background: var(--soft); border-bottom-color: transparent; }
+#jobs tr.detail-row > td { background: var(--soft); padding: 4px 14px 16px; border-bottom: 2px solid var(--line-strong); }
+#jobs tr.detail-row:hover td { background: var(--soft); }
+.job-detail { border-left: 2px solid var(--ink); padding: 6px 0 2px 14px; animation: drop .15s ease-out; }
+@keyframes drop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+button.details-btn { padding: 4px 10px; font-size: 12.5px; white-space: nowrap; }
+.job-detail details > summary { cursor: pointer; font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin: 14px 0 6px; }
+select.missing { border-color: var(--err); }
+.badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; }
+.PENDING { background: var(--soft); color: var(--muted); border: 1px solid var(--line-strong); }
+.RUNNING { background: var(--run); color: #fff; } .SUCCESS { background: var(--ok); color: #fff; } .FAILED { background: var(--err); color: #fff; }
+:root[data-theme="dark"] .RUNNING, :root[data-theme="dark"] .SUCCESS, :root[data-theme="dark"] .FAILED { color: #0d0d0e; }
+.final { margin: 6px 0 14px; padding: 12px 16px; border-radius: 10px; font-weight: 600; border: 1px solid transparent; }
+.final.ok { background: color-mix(in srgb, var(--ok) 12%, var(--card)); color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+.final.fail { background: color-mix(in srgb, var(--err) 10%, var(--card)); color: var(--err); border-color: color-mix(in srgb, var(--err) 40%, transparent); }
+.final.run { background: color-mix(in srgb, var(--run) 9%, var(--card)); color: var(--run); border-color: color-mix(in srgb, var(--run) 30%, transparent); }
+.final code { background: var(--soft); color: var(--ink); padding: 1px 6px; border-radius: 4px; }
+.evidence { display: grid; gap: 2px; }
+table.ev { max-width: 780px; } table.ev td, table.ev th { padding: 5px 9px; }
+.ok-t { color: var(--ok); font-weight: 700; } .bad-t { color: var(--err); font-weight: 700; }
+
+/* ---------------------------------------------------------------- dialogs + toast */
+dialog.dlg { border: 1px solid var(--line-strong); border-top: 4px solid var(--ink); border-radius: 12px; padding: 20px 22px;
+  max-width: min(560px, 92vw); background: var(--card); color: var(--ink); box-shadow: 0 16px 50px rgba(0,0,0,.35); }
+dialog.dlg-err { border-top-color: var(--err); } dialog.dlg-err h2 { color: var(--err); }
+dialog.dlg::backdrop { background: rgba(0, 0, 0, .55); backdrop-filter: blur(2px); }
+dialog.dlg pre { max-height: 200px; white-space: pre-wrap; border-radius: 8px; }
+dialog.dlg ul { padding-left: 18px; }
+.dlg-actions { justify-content: flex-end; margin: 16px 0 0; }
+#toast { position: fixed; bottom: 20px; right: 20px; max-width: 520px; padding: 11px 16px; border-radius: 10px; background: var(--ink); color: var(--card);
+         box-shadow: 0 8px 28px rgba(0,0,0,.3); white-space: pre-wrap; z-index: 10; font-weight: 500; }
+
+@media (max-width: 640px) {
+  header, main { padding-left: 16px; padding-right: 16px; }
+  h1 .sub { display: none; }
+  .school-name, .brand-sep { display: none; }
+  #jobs th:nth-child(4), #jobs td:nth-child(4), #jobs th:nth-child(5), #jobs td:nth-child(5) { display: none; }
+}

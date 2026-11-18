@@ -1,0 +1,35 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api-ui-preview",
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "app.api:app", "--port", "8000"],
+      "env": {
+        "BUS_BACKEND": "memory",
+        "SIMULATE_DEVICES": "1",
+        "INPROCESS_WORKER": "1",
+        "VERIFY_INTERVAL": "2",
+        "WORKER_TOKEN": "preview-worker",
+        "APPROVAL_HMAC_SECRET": "preview-hmac",
+        "DATA_DIR": "data/preview"
+      },
+      "port": 8000
+    },
+    {
+      "name": "api-ui-verify-8001",
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "app.api:app", "--port", "8001"],
+      "env": {
+        "BUS_BACKEND": "memory",
+        "SIMULATE_DEVICES": "1",
+        "INPROCESS_WORKER": "1",
+        "VERIFY_INTERVAL": "2",
+        "WORKER_TOKEN": "preview-worker",
+        "APPROVAL_HMAC_SECRET": "preview-hmac",
+        "DATA_DIR": "data/verify"
+      },
+      "port": 8001
+    }
+  ]
+}

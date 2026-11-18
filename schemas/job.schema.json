@@ -1,0 +1,205 @@
+{
+  "$defs": {
+    "ApprovalRef": {
+      "additionalProperties": false,
+      "properties": {
+        "approval_id": {
+          "title": "Approval Id",
+          "type": "string"
+        },
+        "approver": {
+          "title": "Approver",
+          "type": "string"
+        },
+        "approved_at": {
+          "title": "Approved At",
+          "type": "string"
+        },
+        "token": {
+          "description": "HMAC-SHA256(APPROVAL_HMAC_SECRET, approval_id|config_id|device|sha256)",
+          "title": "Token",
+          "type": "string"
+        }
+      },
+      "required": [
+        "approval_id",
+        "approver",
+        "approved_at",
+        "token"
+      ],
+      "title": "ApprovalRef",
+      "type": "object"
+    },
+    "ConfigRef": {
+      "additionalProperties": false,
+      "properties": {
+        "config_id": {
+          "title": "Config Id",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "config_id",
+        "sha256"
+      ],
+      "title": "ConfigRef",
+      "type": "object"
+    },
+    "JobType": {
+      "enum": [
+        "discover",
+        "deploy",
+        "verify",
+        "reset"
+      ],
+      "title": "JobType",
+      "type": "string"
+    },
+    "VerifyExpectation": {
+      "additionalProperties": false,
+      "properties": {
+        "process_id": {
+          "title": "Process Id",
+          "type": "integer"
+        },
+        "router_id": {
+          "title": "Router Id",
+          "type": "string"
+        },
+        "neighbors": {
+          "description": "Router-ids expected in FULL state",
+          "items": {
+            "type": "string"
+          },
+          "title": "Neighbors",
+          "type": "array"
+        },
+        "ospf_prefixes": {
+          "description": "Remote CIDRs that must appear as 'O' routes",
+          "items": {
+            "type": "string"
+          },
+          "title": "Ospf Prefixes",
+          "type": "array"
+        },
+        "passive_interfaces": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Passive Interfaces",
+          "type": "array"
+        },
+        "pings": {
+          "description": "[{target, source, required}] - required pings gate SUCCESS",
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Pings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "process_id",
+        "router_id",
+        "neighbors",
+        "ospf_prefixes"
+      ],
+      "title": "VerifyExpectation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Message on topic `network-config-jobs` (key = device_id).",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "job_id": {
+      "title": "Job Id",
+      "type": "string"
+    },
+    "job_type": {
+      "$ref": "#/$defs/JobType"
+    },
+    "project_id": {
+      "title": "Project Id",
+      "type": "string"
+    },
+    "batch_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Batch Id"
+    },
+    "device_id": {
+      "title": "Device Id",
+      "type": "string"
+    },
+    "config_ref": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ConfigRef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "approval": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ApprovalRef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "verification_cmds": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Verification Cmds",
+      "type": "array"
+    },
+    "expect": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VerifyExpectation"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "job_id",
+    "job_type",
+    "project_id",
+    "device_id"
+  ],
+  "title": "JobMessage",
+  "type": "object"
+}

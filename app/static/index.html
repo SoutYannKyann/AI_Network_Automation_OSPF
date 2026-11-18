@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Network Automation · OSPF</title>
+<link rel="icon" type="image/png" href="/static/img/mfu-emblem.png">
+<script>
+  // apply the saved / system theme before first paint (no flash)
+  (function () {
+    var t = null; try { t = localStorage.getItem("theme"); } catch (e) {}
+    if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    document.documentElement.dataset.theme = t;
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="/static/style.css?v=9">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <a class="school" href="https://www.mfu.ac.th" target="_blank" rel="noopener" title="Mae Fah Luang University">
+      <img src="/static/img/mfu-emblem.png" alt="Mae Fah Luang University emblem" width="34" height="48">
+      <span class="school-name"><b>MAE FAH LUANG</b><span>UNIVERSITY</span></span>
+    </a>
+    <span class="brand-sep" aria-hidden="true"></span>
+    <h1>AI Network Automation System<span class="sub">OSPFv2 Area 0 · Kafka · Paramiko</span></h1>
+  </div>
+  <div class="hdr-right">
+    <span class="watermark"><span id="health" class="dot" title="checking the API…"></span>Htet Lin Aung_6631501132</span>
+    <button id="btnTheme" class="ghost" title="Switch light / dark mode" aria-label="Switch light / dark mode"></button>
+    <button id="btnNewRun" title="Clear the page and start with a new diagram">New Session</button>
+  </div>
+</header>
+
+<main>
+  <!-- ======================================================== 1 -->
+  <section class="card" id="s-plan">
+    <h2>1 · Upload the diagram and generate the plan</h2>
+    <div class="row">
+      <div class="col">
+        <input type="file" id="file" accept="image/png,image/jpeg">
+        <label class="block">Requirements the diagram does not show (passed to the AI)
+          <textarea id="notes" rows="3" placeholder="e.g. OSPF process 1 area 0; R1 router-id 1.1.1.1; R2 router-id 2.2.2.2; LAN interfaces passive"></textarea>
+        </label>
+        <div class="actions gen-bar">
+          <button id="btnGenerate" class="primary">Generate plan</button>
+          <span id="genStatus" class="status" hidden></span>
+        </div>
+      </div>
+      <div class="col preview"><img id="preview" alt="diagram preview" hidden><span id="noPreview" class="muted">No diagram selected</span></div>
+    </div>
+  </section>
+
+  <!-- ======================================================== 2 -->
+  <section class="card" id="s-review">
+    <h2>2 · Review and approve</h2>
+    <div id="review" class="review"></div>
+    <div class="row">
+      <div class="col"><h3>Interface plan (from the AI + real router discovery)</h3>
+        <div id="planEmpty" class="empty">No plan yet - click <b>Generate plan</b> in step 1.</div>
+        <table id="planTable" hidden><thead><tr><th>Router</th><th>Interface</th><th>IP / mask</th><th>Link</th><th>Role</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="col"><h3>AI flags</h3><ul id="ambiguities" class="issues"></ul></div>
+    </div>
+    <div id="configs" class="configs"></div>
+    <div class="actions approve-bar">
+      <button id="btnReview">Review</button>
+      <label class="inline"><input type="checkbox" id="ackWarn"> I have reviewed the configurations and flags</label>
+      <input id="approver" placeholder="approver name" aria-label="approver">
+      <button id="btnApprove" class="approve">Approve</button>
+    </div>
+  </section>
+
+  <!-- ======================================================== 3 -->
+  <section class="card" id="s-deploy">
+    <h2>3 · Deploy and monitor</h2>
+    <div class="actions">
+      <button id="btnDeploy" class="primary" disabled>Deploy</button>
+      <button id="btnUndeploy" class="outline-danger" title="Remove R1/R2 data-plane config (interface IPs + OSPF), keep management SSH">Undeploy (reset R1/R2)</button>
+      <span id="deployHint" class="muted">Deployment starts automatically when the plan is approved in step 2.</span>
+    </div>
+    <p class="muted small">Jobs go to Kafka topic <code>network-config-jobs</code>; the worker configures the routers over SSH, then OSPF verification runs automatically. Click <b>details</b> on a job to expand it.</p>
+    <div id="final"></div>
+    <table id="jobs"><thead><tr><th>Status</th><th>Type</th><th>Router</th><th>Created</th><th>Started</th><th>Finished</th><th>Took</th><th>Message</th><th></th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <!-- ======================================================== advanced -->
+  <details class="card" id="s-advanced">
+    <summary>Advanced: edit the AI result or the interface mapping</summary>
+    <p class="muted">Only needed when the AI misreads the diagram or the cabling differs from the suggestion. After a change, click <b>Generate plan</b> again; it keeps your edits.</p>
+    <div class="row">
+      <div class="col">
+        <h3>AI extraction (JSON)</h3>
+        <div class="actions">
+          <button id="btnSaveJson">Save edited JSON</button>
+          <button id="btnReanalyze">Re-run AI analysis</button>
+          <button id="btnSample">Load sample JSON (fallback)</button>
+        </div>
+        <textarea id="extraction" rows="18" spellcheck="false" class="mono"></textarea>
+        <h3>Plan checks</h3><ul id="extractIssues" class="issues"></ul>
+      </div>
+      <div class="col">
+        <h3>Router IDs and interface mapping</h3>
+        <div class="actions">
+          <button id="btnDiscover">Discover interfaces</button>
+          <button id="btnSuggest">Suggest mapping</button>
+          <button id="btnSaveMap">Save mapping</button>
+        </div>
+        <div id="routerIds" class="rids"></div>
+        <table id="mapTable"><thead><tr><th>Router</th><th>Logical</th><th>IP / mask</th><th>Link</th><th>Physical interface</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+  </details>
+</main>
+<div id="toast" hidden></div>
+
+<dialog id="errDialog" class="dlg dlg-err">
+  <h2 id="errTitle">Something went wrong</h2>
+  <p id="errMsg"></p>
+  <details id="errMore"><summary>Technical details</summary><pre id="errDetail"></pre></details>
+  <div class="actions dlg-actions" id="errActions"></div>
+</dialog>
+
+<dialog id="ridDialog" class="dlg">
+  <h2>Confirm the OSPF router IDs</h2>
+  <p>The diagram does not show router IDs, so the AI flagged them instead of guessing. Enter the IDs the requirements give (suggested values are pre-filled - change them if your task sheet says otherwise).</p>
+  <div id="ridFields" class="rids"></div>
+  <div class="actions dlg-actions">
+    <button id="ridCancel">Cancel</button>
+    <button id="ridOk" class="primary">Continue</button>
+  </div>
+</dialog>
+
+<dialog id="undDialog" class="dlg dlg-err">
+  <h2>Undeploy - reset R1 and R2?</h2>
+  <p>This sends approved <b>reset</b> jobs through Kafka to the worker, which connects over SSH and removes the data-plane configuration:</p>
+  <ul>
+    <li><b>Removed:</b> IP addresses, descriptions and OSPF interface settings on the non-management interfaces (they are shut down), and the OSPF process.</li>
+    <li><b>Kept:</b> the management interface and SSH access, hostname, users and passwords.</li>
+  </ul>
+  <label class="block">Approved by <input id="undApprover" placeholder="your name" aria-label="approver"></label>
+  <div class="actions dlg-actions">
+    <button id="undCancel">Cancel</button>
+    <button id="undOk" class="danger">Approve &amp; undeploy</button>
+  </div>
+</dialog>
+
+<script src="/static/app.js?v=8"></script>
+</body>
+</html>

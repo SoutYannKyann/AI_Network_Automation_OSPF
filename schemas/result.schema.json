@@ -1,0 +1,175 @@
+{
+  "$defs": {
+    "CommandRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "title": "Command",
+          "type": "string"
+        },
+        "output": {
+          "title": "Output",
+          "type": "string"
+        },
+        "ok": {
+          "default": true,
+          "title": "Ok",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "command",
+        "output"
+      ],
+      "title": "CommandRecord",
+      "type": "object"
+    },
+    "JobStatus": {
+      "enum": [
+        "PENDING",
+        "RUNNING",
+        "SUCCESS",
+        "FAILED"
+      ],
+      "title": "JobStatus",
+      "type": "string"
+    },
+    "JobType": {
+      "enum": [
+        "discover",
+        "deploy",
+        "verify",
+        "reset"
+      ],
+      "title": "JobType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Message on topic `network-config-results` (key = job_id).",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "job_id": {
+      "title": "Job Id",
+      "type": "string"
+    },
+    "device_id": {
+      "title": "Device Id",
+      "type": "string"
+    },
+    "job_type": {
+      "$ref": "#/$defs/JobType"
+    },
+    "status": {
+      "$ref": "#/$defs/JobStatus"
+    },
+    "final": {
+      "description": "False for progress events, True for the terminal SUCCESS/FAILED event",
+      "title": "Final",
+      "type": "boolean"
+    },
+    "message": {
+      "default": "",
+      "title": "Message",
+      "type": "string"
+    },
+    "error_kind": {
+      "anyOf": [
+        {
+          "enum": [
+            "auth",
+            "timeout",
+            "unreachable",
+            "ssh",
+            "command",
+            "approval",
+            "integrity",
+            "safety",
+            "verification",
+            "internal"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Kind"
+    },
+    "applied_lines": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Applied Lines",
+      "type": "array"
+    },
+    "rolled_back": {
+      "default": false,
+      "title": "Rolled Back",
+      "type": "boolean"
+    },
+    "noop": {
+      "default": false,
+      "description": "True when running-config already matched (idempotent re-run)",
+      "title": "Noop",
+      "type": "boolean"
+    },
+    "commands": {
+      "items": {
+        "$ref": "#/$defs/CommandRecord"
+      },
+      "title": "Commands",
+      "type": "array"
+    },
+    "verification": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Verification"
+    },
+    "discovery": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Discovery"
+    },
+    "worker": {
+      "default": "",
+      "title": "Worker",
+      "type": "string"
+    },
+    "ts": {
+      "title": "Ts",
+      "type": "string"
+    }
+  },
+  "required": [
+    "job_id",
+    "device_id",
+    "job_type",
+    "status",
+    "final"
+  ],
+  "title": "ResultMessage",
+  "type": "object"
+}

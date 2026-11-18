@@ -1,0 +1,14 @@
+.env
+inventory.yaml
+data/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# not part of the public repository
+references/
+*.docx
+REPORT.md
+Claude outputs/
+*.bak
