@@ -351,24 +351,29 @@ async function pollJobs() {
       detail: bad.map((j) => j.output || "").join("\n---\n").slice(-3000), actions: kind === "Undeploy" ? [] : [{ label: "Deploy again", primary: true, run: startDeploy }] });
     else toast(kind === "Undeploy" ? "✔ Undeploy finished - R1/R2 data plane reset, management kept." : "✔ Deployment verified: OSPF FULL and remote LANs learned. Now ping 10.2.0.10 from PC1.", 15000);
   }
-  renderJobs();
+  // redraw the table only when something actually changed (otherwise open details would flicker)
+  const sig = JSON.stringify(jobs.map((j) => [j.id, j.status, j.finished_at, (j.events || []).length]));
+  if (sig !== pollJobs._sig) { pollJobs._sig = sig; renderJobs(); }
   updateDeployButton();
 }
 
 // jobs table; "details" expands a drop-down row right under the job (click again to close)
 const openDetails = new Set();
+let justOpened = null;  // only the row the user just opened gets the slide-in animation
 function renderJobs() {
   const tb = $("#jobs tbody");
   const keepOpen = new Map([...tb.querySelectorAll("tr.detail-row details[open]")].map((d) => [d.closest("tr").dataset.for + "|" + d.dataset.k, true]));
   tb.innerHTML = JOBS.map((j) => {
     const open = openDetails.has(j.id);
     return `<tr class="job-row${open ? " is-open" : ""}"><td><span class="badge ${j.status}">${j.status}</span></td><td>${esc(j.job_type)}</td><td>${esc(j.device)}</td><td>${esc(fmtTime(j.created_at))}</td><td>${esc(fmtTime(j.started_at))}</td><td>${esc(fmtTime(j.finished_at))}</td><td>${esc(fmtDur(j.started_at, j.finished_at))}</td><td>${longText(j.message || "", 90)}${j.rolled_back ? " <b>(rolled back)</b>" : ""}</td><td><button class="details-btn" data-job="${j.id}" aria-expanded="${open}">${open ? "hide ▴" : "details ▾"}</button></td></tr>` +
-      (open ? `<tr class="detail-row" data-for="${j.id}"><td colspan="9">${renderJob(j)}</td></tr>` : "");
+      (open ? `<tr class="detail-row" data-for="${j.id}"><td colspan="9">${renderJob(j, j.id === justOpened)}</td></tr>` : "");
   }).join("") || '<tr><td colspan="9" class="muted">No jobs yet</td></tr>';
   // keep inner <details> (Kafka message / device output) open across the 2-second refresh
   tb.querySelectorAll("tr.detail-row details[data-k]").forEach((d) => { if (keepOpen.has(d.closest("tr").dataset.for + "|" + d.dataset.k)) d.open = true; });
   tb.querySelectorAll("button[data-job]").forEach((b) => (b.onclick = () => {
-    const id = b.dataset.job; openDetails.has(id) ? openDetails.delete(id) : openDetails.add(id); renderJobs();
+    const id = b.dataset.job;
+    if (openDetails.has(id)) { openDetails.delete(id); justOpened = null; } else { openDetails.add(id); justOpened = id; }
+    renderJobs(); justOpened = null;
   }));
 }
 
@@ -415,9 +420,9 @@ function renderEvidence(c) {
       [esc(p.target), esc(p.source), `${esc(p.success_rate)} % (${esc(p.received)}/${esc(p.sent)})`, tick(p.ok)]))}` : ""}
   </div>`;
 }
-function renderJob(j) {
+function renderJob(j, animate = false) {
   const ev = j.job_type === "verify" ? renderEvidence(j.verification?.checks) : "";
-  return `<div class="job-detail">
+  return `<div class="job-detail${animate ? " anim" : ""}">
     <div class="muted small">job ${esc(j.id.slice(0, 8))} · ${esc(j.job_type)} on ${esc(j.device)} · took ${esc(fmtDur(j.started_at, j.finished_at) || "…")}</div>${ev}
     <h3>Timeline</h3><ul class="issues">${(j.events || []).map((e) => `<li class="${e.status === "FAILED" ? "error" : e.status === "SUCCESS" ? "info" : ""}">${esc(fmtTime(e.ts))} <b>${esc(e.status)}</b> ${longText(e.message)}</li>`).join("")}</ul>
     ${j.applied_lines?.length ? `<h3>Applied lines</h3><pre>${esc(j.applied_lines.join("\n"))}</pre>` : ""}
@@ -429,7 +434,7 @@ function renderJob(j) {
 // ---------------------------------------------------------------- new run
 $("#btnNewRun").onclick = () => {
   if (PID && !confirm("Start a new run? The current project stays saved; the page is cleared for a fresh diagram.")) return;
-  PID = null; PROJECT = null; JOBS = []; openJob = null; uploadedKey = null; pollJobs._init = false; pollJobs._shown = new Set();
+  PID = null; PROJECT = null; JOBS = []; openJob = null; uploadedKey = null; pollJobs._init = false; pollJobs._shown = new Set(); pollJobs._sig = undefined;
   history.replaceState(null, "", location.pathname);
   $("#file").value = ""; $("#notes").value = ""; $("#preview").hidden = true; $("#preview").removeAttribute("src"); $("#noPreview").hidden = false;
   $("#approver").value = ""; $("#ackWarn").checked = false;
