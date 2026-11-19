@@ -24,6 +24,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 12
+    restart: unless-stopped          # come back after Docker Desktop restarts / laptop sleep
 
   kafka-ui:                          # evidence: "Kafka job is visible"
     image: provectuslabs/kafka-ui:v0.7.2
@@ -33,6 +34,7 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
     depends_on:
       kafka: { condition: service_healthy }
+    restart: unless-stopped
 
   api:
     build: .
