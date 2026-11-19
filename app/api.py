@@ -294,8 +294,10 @@ def index():
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "bus": st().s.bus_backend, "jobs_topic": st().s.jobs_topic,
-            "results_topic": st().s.results_topic, "simulate_devices": st().s.simulate_devices}
+    s = st().s
+    return {"ok": True, "bus": s.bus_backend, "jobs_topic": s.jobs_topic,
+            "results_topic": s.results_topic, "simulate_devices": s.simulate_devices,
+            "branding": {"watermark": s.ui_watermark, "school": s.ui_school_branding}}
 
 
 @app.get("/api/inventory")

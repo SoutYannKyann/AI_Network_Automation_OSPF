@@ -149,6 +149,21 @@ def test_only_listed_approvers_may_approve_or_undeploy(env, monkeypatch):
     assert any(a["action"] == "undeploy" and a["actor"] == "admin:Prof. Smith" for a in audit)  # canonical name stored
 
 
+def test_branding_is_public_by_default_and_switchable(env, monkeypatch):
+    api, c = env
+    monkeypatch.delenv("UI_WATERMARK", raising=False)
+    monkeypatch.delenv("UI_SCHOOL_BRANDING", raising=False)
+    from app.config import get_settings
+    api.STATE.s = get_settings()
+    assert c.get("/api/health").json()["branding"] == {"watermark": "", "school": False}
+    page = c.get("/").text
+    assert "Mae Fah Luang" not in page and "6631501132" not in page          # nothing school-specific in the page
+    monkeypatch.setenv("UI_WATERMARK", "Htet Lin Aung_6631501132")
+    monkeypatch.setenv("UI_SCHOOL_BRANDING", "true")
+    api.STATE.s = get_settings()
+    assert c.get("/api/health").json()["branding"] == {"watermark": "Htet Lin Aung_6631501132", "school": True}
+
+
 def test_claim_endpoint_guards(env):
     _, c = env
     assert c.post("/api/internal/jobs/x/claim", json={"device_id": "R1", "job_type": "deploy"}).status_code == 401

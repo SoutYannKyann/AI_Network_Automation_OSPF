@@ -518,10 +518,27 @@ function applyTheme(t) {
 $("#btnTheme").onclick = () => applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
 applyTheme(document.documentElement.dataset.theme || "light");
 
+// optional branding from .env (UI_WATERMARK, UI_SCHOOL_BRANDING); the public default shows neither
+function applyBranding(b) {
+  const text = (b?.watermark || "").trim();
+  $("#wmText").textContent = text;
+  $("#watermark").classList.toggle("dot-only", !text);
+  if (b?.school && !$(".school")) {
+    const a = document.createElement("a");
+    a.className = "school"; a.href = "https://www.mfu.ac.th"; a.target = "_blank"; a.rel = "noopener"; a.title = "Mae Fah Luang University";
+    a.innerHTML = '<img src="/static/img/mfu-emblem.png" alt="Mae Fah Luang University emblem" width="34" height="48">' +
+                  '<span class="school-name"><b>MAE FAH LUANG</b><span>UNIVERSITY</span></span>';
+    const sep = document.createElement("span"); sep.className = "brand-sep"; sep.setAttribute("aria-hidden", "true");
+    $("#brand").prepend(a, sep);
+    $("#favicon").type = "image/png"; $("#favicon").href = "/static/img/mfu-emblem.png";
+  }
+}
+
 (async function init() {
   const dot = $("#health");
   try {
     const h = await api("/api/health");
+    applyBranding(h.branding);
     dot.className = "dot " + (h.simulate_devices ? "warn" : "ok");
     dot.title = `API connected · ${h.bus} · topic ${h.jobs_topic}${h.simulate_devices ? " · SIMULATED devices" : " · real routers"}`;
   } catch (e) { dot.className = "dot bad"; dot.title = "API not reachable"; }

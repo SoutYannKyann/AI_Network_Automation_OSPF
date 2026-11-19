@@ -1,10 +1,8 @@
 # AI Network Automation System: OSPFv2 Area 0
 
-Final lab test for **Network Analysis and Telemetry** (course code 1501427), Mae Fah Luang University. Author: Htet Lin Aung (6631501132).
-
 A web application takes a topology diagram and turns it into working router configs. An image-capable AI model reads the diagram into a validated plan. The system generates Cisco IOS/OSPF configs, and an administrator reviews and approves them. Approved jobs go out over **Apache Kafka** to a **Python Worker**, which deploys them over SSH with **Paramiko**. The worker then checks that the OSPF adjacency is FULL, that each router learns the remote LAN through OSPF, and that the remote LAN answers pings.
 
-Where the generic brief and the exam sheet disagree, the exam sheet wins. The exam asks for topic `network-config-jobs`, interface names discovered from the routers, passive LAN interfaces, the worker re-checking approval with the backend, and no static routes. Section 11 lists each of these choices.
+Key design rules: jobs go to the Kafka topic `network-config-jobs`, interface names are discovered from the routers rather than read from the diagram, LAN interfaces are passive, the worker re-checks approval with the backend, and static routes are never used. Section 11 explains each choice.
 
 ---
 
@@ -83,8 +81,8 @@ AI_Network_Automation_OSPF/
 │   ├── ios_parse.py      # show-output parsers, running-config diff, rollback generator
 │   └── simulator.py      # in-process IOS simulator (SIMULATE_DEVICES=1, rehearsal/tests)
 ├── schemas/              # exported JSON Schemas (scripts/export_schemas.py)
-├── samples/              # exam diagram, exam_plan.json, alt_plan.json (alternate addressing)
-├── tests/                # 47 pytest tests (generator, validator, parsers, executor, SSH, AI extraction (mocked), API flow)
+├── samples/              # example diagram, exam_plan.json (example topology), alt_plan.json (alternate addressing)
+├── tests/                # 66 pytest tests (generator, validator, parsers, executor, SSH, AI extraction (mocked), API flow)
 ├── docker-compose.yml    # Kafka (KRaft) + Kafka UI + API + worker
 ├── Dockerfile  requirements.txt  .env.example  inventory.example.yaml
 └── REPORT.md             # short architecture/test report + evidence checklist
@@ -167,7 +165,7 @@ A `verify` job carries `expect` and no config:
 
 ## 5. Config Generator
 
-[`app/generator.py`](app/generator.py) builds everything from the validated plan; nothing is tied to the exam addressing.
+[`app/generator.py`](app/generator.py) builds everything from the validated plan; nothing is tied to the example addressing.
 - A `network <net> <wildcard> area 0` line is emitted for each connected subnet.
 - A `passive-interface` line is emitted for each LAN interface.
 - The transit link uses `ip ospf network point-to-point`. Both sides get it, so there is no DR/BDR election wait and adjacency forms faster.
@@ -193,7 +191,7 @@ router ospf {{ process_id }}
 end
 ```
 
-Rendered output for the exam topology. The physical names come from discovery; the ones shown are examples.
+Rendered output for the example topology. The physical names come from discovery; the ones shown are examples.
 ```
 ! R1                                        ! R2
 hostname R1                                 hostname R2
@@ -363,7 +361,7 @@ The worker runs these checks automatically. The commands below are for the live 
 - **Disruptive commands:** blocked at Review and again in the worker. The blocked list:
   - `reload`, `erase`, `write erase`, `delete`, `format`, `boot`, `clear`, `configure replace`;
   - `username`, `enable secret`, `ip ssh`, `line vty|con|aux`, `aaa`, `transport input`, `access-class`, `crypto key`;
-  - `ip route`, which enforces the exam rule against static routes.
+  - `ip route`, which enforces the rule that OSPF, not static routes, connects the LANs.
 
   There is deliberately no path that applies them. Read-only jobs (discover, verify) can only run `show`, `ping` and `terminal`.
 - **Management plane:** the management interface is excluded at three points: mapping, validation and the worker guard. It is found live by its IP, or set explicitly with `mgmt_interface` in `inventory.yaml` when SSH arrives through NAT or a console server. If it cannot be identified, approval is blocked (`MGMT_IFACE_UNKNOWN`) and the worker refuses to deploy. An interface whose current IP is outside every plan subnet is never suggested for the mapping, and mapping it raises a `FOREIGN_IP` warning.
@@ -385,7 +383,7 @@ Fill in `AI_PROVIDER` (and `ANTHROPIC_API_KEY` if you use Claude), the two rando
 ```bash
 cp inventory.example.yaml inventory.yaml
 ```
-Set the instructor-provided management IP for R1 and R2. Start the stack:
+Set the management IP of R1 and R2. Start the stack:
 ```bash
 docker compose up -d --build
 ```
@@ -412,7 +410,7 @@ python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
 
 **GNS3 lab setup (c7200 / Dynamips inside the GNS3 VM, management on VMnet1 192.168.239.0/24):**
 
-This is one-time lab preparation, the equivalent of the instructor's "independent management SSH access". It is not part of the automated demo.
+This is one-time lab preparation: it gives the routers management SSH access that is independent of the data plane. It is not part of the automated workflow.
 
 0. **GNS3 VM (VMware Workstation).** Its first adapter is host-only (VMnet1), so the VM is at 192.168.239.x (here .128) and Windows sits at 192.168.239.1.
    - Windows hosts running Docker Desktop (WSL2) or VBS run Windows' hypervisor, and VMware then cannot offer nested VT-x. Set `vhv.enable = "FALSE"` in `GNS3 VM.vmx` while the VM is off and VMware is closed. GNS3 2.2 only adds `vhv.enable = "TRUE"` when the line is missing, so an explicit `FALSE` is kept. Do not toggle *Virtualize Intel VT-x* in VMware's VM settings afterwards: that deletes the line. Dynamips c7200 does not need nested VT-x.
@@ -447,10 +445,10 @@ This is one-time lab preparation, the equivalent of the instructor's "independen
 4. Set the PCs (VPCS console): PC1 `ip 10.0.0.10/24 10.0.0.1` then `save`; PC2 `ip 10.2.0.10/24 10.2.0.2` then `save`.
 5. Check from Windows: `ping 192.168.239.11` and `.12`, then `ssh -o KexAlgorithms=+diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa <user>@192.168.239.11`. The c7200 (IOS 15.2(4)S6) offers `SSH-2.0-Cisco-1.25` with an `ssh-rsa` host key, `aes128-cbc` and `hmac-sha1`. Then run **Discover** from the UI as the first real test; it is read-only.
 
-**Demo script** (instructor acceptance test):
-1. The instructor resets R1 and R2. The management access stays in place.
+**Walkthrough:**
+1. Start from clean routers (use **Undeploy** if they were configured before). Management access stays in place.
 2. Open the UI at http://localhost:8000.
-3. **Step 1:** choose the diagram (it previews). In the notes, add any requirement the image lacks, for example: `OSPF process 1 area 0; R1 router-id 1.1.1.1; R2 router-id 2.2.2.2; LAN interfaces passive`. Click **Generate plan**. The progress list shows each automatic stage:
+3. **Step 1:** choose the diagram (it previews). In the notes, add any requirement the image lacks, for example: `OSPF process 1 area 0; R1 router-id 1.1.1.1; R2 router-id 2.2.2.2; LAN interfaces passive`. Click **Generate plan**. The status line next to the button shows each automatic stage:
    - upload;
    - AI analysis;
    - read-only interface discovery on R1/R2 through Kafka → worker → Paramiko;
@@ -458,44 +456,46 @@ This is one-time lab preparation, the equivalent of the instructor's "independen
    - config generation;
    - validation.
 
-   If a stage needs input (AI failure, missing router ID, cabling that differs from the suggestion), the list says so and the *Advanced* section lets you edit the JSON or the mapping. Then click **Generate plan** again; it keeps the edits.
+   If a stage needs input (AI failure, missing router ID, cabling that differs from the suggestion), a popup says so and the *Advanced* section lets you edit the JSON or the mapping. Then click **Generate plan** again; it keeps the edits.
    If the diagram and notes give no router IDs, a popup asks you to confirm them. It suggests R*n* → n.n.n.n; the AI flags them rather than guessing.
-4. **Step 2:** show the interface plan, the AI flags (mark them resolved if you like; this keeps the configs) and the R1/R2 configs. **Review** re-runs the checks (it should show VALID). Enter the approver, tick *I have reviewed…*, and click **Approve**. Approval is the last human step: deployment to Kafka starts automatically. The *Progress through the exam tasks* panel ticks off Tasks 1–10 live, and failures open a popup with the reason.
-5. Show the extraction JSON under *Advanced* as Task 2 evidence.
-6. **Step 3:** deployment is already running (the **Deploy** button re-deploys). The job table shows local times and durations; a verify job's **details** show the OSPF neighbour (FULL), OSPF route, protocol and ping tables, which serve as Task 8 evidence.
+4. **Step 2:** show the interface plan, the AI flags (mark them resolved if you like; this keeps the configs) and the R1/R2 configs. **Review** re-runs the checks (it should show VALID). Enter the approver, tick *I have reviewed…*, and click **Approve**. Approval is the last human step: deployment to Kafka starts automatically, and failures open a popup with the reason.
+5. The full extraction JSON is under *Advanced*.
+6. **Step 3:** deployment is already running (the **Deploy** button re-deploys). The job table shows local times and durations; a verify job's **details** show the OSPF neighbour (FULL), OSPF route, protocol and ping tables.
 
-   **Undeploy (reset R1/R2)** returns the routers to the instructor's starting state, so the full workflow can be rehearsed:
+   **Undeploy (reset R1/R2)** returns the routers to their clean starting state, so the full workflow can be rerun:
    - The admin enters a name and confirms. One HMAC-signed approval per router is bound to the fixed reset specification (`generator.reset_spec`).
    - `reset` jobs go through Kafka, and the worker re-checks the approval in its claim.
    - On every non-management interface the worker removes the IP address, description and `ip ospf` lines, then shuts the interface. It also removes `router ospf` and any Loopbacks. The management interface, hostname, users, SSH and vty are never touched.
    - A running-config backup is saved first, and a post-check confirms nothing data-plane remains.
    - **Deploy** (same approval) brings the configuration back.
 
-   **New run** (header) clears the page for a fresh diagram; old projects stay saved.
+   **New Session** (header) clears the page for a fresh diagram; old projects stay saved.
 
-   **Approvers:** `APPROVERS` in `.env` is a comma-separated list, e.g. `APPROVERS=Htet Lin Aung,Prof. Somchai`. When it's set, the approver fields become a drop-down, and the API rejects any other name for Approve and Undeploy (HTTP 403); matching ignores case, and the canonical name is stored in the audit log. Apply a change with `docker compose up -d api`. An empty list accepts any name.
+   **Branding:** the default look is neutral. `UI_WATERMARK` in `.env` adds a text next to the status dot, and `UI_SCHOOL_BRANDING=true` shows a university logo and name in the header.
+
+   **Approvers:** `APPROVERS` in `.env` is a comma-separated list, e.g. `APPROVERS=Alice,Bob`. When it's set, the approver fields become a drop-down, and the API rejects any other name for Approve and Undeploy (HTTP 403); matching ignores case, and the canonical name is stored in the audit log. Apply a change with `docker compose up -d api`. An empty list accepts any name.
 
    The **Deploy** button stays disabled until the plan is approved, because approval deploys automatically. After that it reads **Deploy again** and re-sends the same approved configuration. Watch R1 and R2 move from PENDING to RUNNING to SUCCESS, then the two verify jobs reach SUCCESS. Open the verify job to show FULL adjacency, the O routes and the pings.
 7. Show Kafka UI with the topic messages, then run `ping 10.2.0.10` from PC1.
 
 **Rehearsal without GNS3:** set `SIMULATE_DEVICES=true` and run the same stack. The worker then uses the built-in IOS simulator.
 
-**UI rehearsal without Docker or Kafka (dev only):** set `BUS_BACKEND=memory`, `INPROCESS_WORKER=1` and `SIMULATE_DEVICES=1`, plus `WORKER_TOKEN` and `APPROVAL_HMAC_SECRET`, then start the API alone. The real worker code runs inside the API process on an in-memory bus. The `api-ui-preview` entry in `.claude/launch.json` does exactly this. Never use this mode for the graded demo, which must go through Kafka.
+**UI rehearsal without Docker or Kafka (dev only):** set `BUS_BACKEND=memory`, `INPROCESS_WORKER=1` and `SIMULATE_DEVICES=1`, plus `WORKER_TOKEN` and `APPROVAL_HMAC_SECRET`, then start the API alone. The real worker code runs inside the API process on an in-memory bus. The `api-ui-preview` entry in `.claude/launch.json` does exactly this. Never use this mode for a real deployment, which must go through Kafka.
 
 **Tests:**
 ```bash
 pip install -r requirements.txt && python -m pytest -q
 ```
-Expect 65 passing tests. Kafka is replaced by an in-memory bus only inside the tests.
+Expect 66 passing tests. Kafka is replaced by an in-memory bus only inside the tests.
 
 ## 11. Assumptions
 
-- **Exam sheet over the generic brief:**
+- **Messaging and approval contract:**
   - The topic is `network-config-jobs`, not `deploy-jobs`, and results go to `network-config-results`.
   - Jobs carry a config reference (id plus sha256) rather than the config text.
   - The worker re-checks approval with the backend.
   - The PENDING, RUNNING, SUCCESS and FAILED states are exactly as listed.
-- **Addressing:** from the diagram and exam table.
+- **Addressing:** from the diagram. The example topology uses:
   - PC1 10.0.0.10/24, gateway 10.0.0.1.
   - R1 10.0.0.1/24 (LAN) and 10.1.0.1/24 (transit).
   - R2 10.1.0.2/24 (transit) and 10.2.0.2/24 (LAN).
@@ -503,12 +503,12 @@ Expect 65 passing tests. Kafka is replaced by an in-memory bus only inside the t
   - OSPF process 1, area 0, router-ids 1.1.1.1 and 2.2.2.2.
 
   The diagram does not show router-ids. They come from the admin notes or are flagged.
-- **Router-id:** set with the `router-id` command, not a loopback. The generic brief suggested a loopback, but it would add a /32 the exam does not ask for. A loopback is optional (`?loopback=true`) and is never advertised.
+- **Router-id:** set with the `router-id` command, not a loopback. A loopback would add an extra /32 the plan does not need. A loopback is optional (`?loopback=true`) and is never advertised.
 - **Interface names:** the diagram does not show them. They come from `show ip interface brief` on each router. The suggested mapping takes free data interfaces in order and is always flagged for the admin to confirm against the GNS3 cabling.
-- **Management:** each router has an out-of-band management IP, listed in `inventory.yaml` and outside every data-plane subnet. Its interface already holds that IP and is never touched. SSH, user accounts and enable access are pre-provisioned by the instructor.
-- **PCs:** assumed to be GNS3 VPCS with no SSH, already addressed by the instructor. Their configs are generated for display and evidence only. If they are IOS devices, the template shows the equivalent commands.
+- **Management:** each router has an out-of-band management IP, listed in `inventory.yaml` and outside every data-plane subnet. Its interface already holds that IP and is never touched. SSH, user accounts and enable access are pre-provisioned (see *GNS3 lab setup*).
+- **PCs:** assumed to be GNS3 VPCS with no SSH, addressed beforehand. Their configs are generated for display and evidence only. If they are IOS devices, the template shows the equivalent commands.
 - **Transit link:** `ip ospf network point-to-point` is used on the R1–R2 link for faster adjacency (no DR election). Adjacency is still FULL.
-- **Saving config:** the config is not saved to startup unless `SAVE_CONFIG=true`. The instructor resets the routers anyway.
+- **Saving config:** the config is not saved to startup unless `SAVE_CONFIG=true`. Undeploy resets the routers anyway.
 - **Platform:** single-node Kafka, replication factor 1, SQLite and one worker instance are enough for a lab. More workers can join the same consumer group; the claim endpoint prevents double execution.
 
 ## 12. Self-Check
@@ -529,12 +529,4 @@ Expect 65 passing tests. Kafka is replaced by an in-memory bus only inside the t
   - automated FULL neighbor, `O` routes for the remote LANs, `show ip protocols` and router-sourced pings;
   - the manual `PC1> ping 10.2.0.10` acceptance step in section 8.
 - [x] **Assumptions are stated** in section 11.
-- [ ] **Not yet exercised in this environment:** none of these were available when this was built:
-  - Docker and a live Kafka broker;
-  - real GNS3 routers;
-  - a live call to the Claude API. There were no credentials, so the request shape and post-processing are tested only against a mocked client.
-
-  The full pipeline was tested end to end through the real FastAPI app, with an in-memory bus and the IOS simulator. Before the exam:
-  1. Run one **Discover** against the real routers. This checks Paramiko key exchange and host-key handling with your IOS image, and shows whether the management interface is detected or needs `mgmt_interface`.
-  2. Run one **Analyze with AI** on `samples/network_diagram.png` and compare the output with `samples/exam_plan.json`.
-  3. Rehearse the full demo and capture the evidence listed in `REPORT.md`.
+- [x] **Verified on a real lab:** Docker with a live Kafka broker, GNS3 c7200 routers (IOS 15.2(4)S6) and live Gemini calls. Discover, deploy, OSPF verification (FULL adjacency, remote LANs learned via OSPF, pings) and PC1 → PC2 ping all succeeded. The Claude and Ollama providers are tested against mocked clients only.

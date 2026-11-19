@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Network Automation · OSPF</title>
-<link rel="icon" type="image/png" href="/static/img/mfu-emblem.png">
+<link rel="icon" id="favicon" type="image/svg+xml" href="/static/img/favicon.svg">
 <script>
   // apply the saved / system theme before first paint (no flash)
   (function () {
@@ -16,20 +16,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="/static/style.css?v=10">
+<link rel="stylesheet" href="/static/style.css?v=11">
 </head>
 <body>
 <header>
-  <div class="brand">
-    <a class="school" href="https://www.mfu.ac.th" target="_blank" rel="noopener" title="Mae Fah Luang University">
-      <img src="/static/img/mfu-emblem.png" alt="Mae Fah Luang University emblem" width="34" height="48">
-      <span class="school-name"><b>MAE FAH LUANG</b><span>UNIVERSITY</span></span>
-    </a>
-    <span class="brand-sep" aria-hidden="true"></span>
+  <div class="brand" id="brand">
+    <!-- optional school branding is inserted here when UI_SCHOOL_BRANDING=true -->
     <h1>AI Network Automation System<span class="sub">OSPFv2 Area 0 · Kafka · Paramiko</span></h1>
   </div>
   <div class="hdr-right">
-    <span class="watermark"><span id="health" class="dot" title="checking the API…"></span>Htet Lin Aung_6631501132</span>
+    <span class="watermark dot-only" id="watermark"><span id="health" class="dot" title="checking the API…"></span><span id="wmText"></span></span>
     <button id="btnTheme" class="ghost" title="Switch light / dark mode" aria-label="Switch light / dark mode"></button>
     <button id="btnNewRun" title="Clear the page and start with a new diagram">New Session</button>
   </div>
@@ -148,6 +144,6 @@
   </div>
 </dialog>
 
-<script src="/static/app.js?v=10"></script>
+<script src="/static/app.js?v=11"></script>
 </body>
 </html>

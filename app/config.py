@@ -38,6 +38,9 @@ class Settings:
     worker_token: str | None = field(default_factory=lambda: _env("WORKER_TOKEN"))
     approval_secret: str | None = field(default_factory=lambda: _env("APPROVAL_HMAC_SECRET"))
     job_lease_seconds: int = field(default_factory=lambda: int(_env("JOB_LEASE_SECONDS", "600")))
+    # UI branding. Public default: no watermark text, no school logo/name.
+    ui_watermark: str = field(default_factory=lambda: (_env("UI_WATERMARK", "") or "").strip())
+    ui_school_branding: bool = field(default_factory=lambda: _bool("UI_SCHOOL_BRANDING", False))
     # authorised approvers (comma separated names). Empty = any non-empty name is accepted.
     approvers: tuple[str, ...] = field(default_factory=lambda: tuple(
         n.strip() for n in (_env("APPROVERS", "") or "").split(",") if n.strip()))
